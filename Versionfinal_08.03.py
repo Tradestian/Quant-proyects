@@ -13,19 +13,19 @@ util.startLoop()
 CONFIG = {
     'SYMBOLS_CSV': 'symbols.csv',
     'IB_HOST': '127.0.0.1',
-    'IB_PORT': 4002, ############################################################################# ver para TWS
+    'IB_PORT': 4002, 
     'CLIENT_ID': 31322,
-    'INTERVAL': 60, ####### cambio a 900 o menos
-    'DURATION': '30 D', ### cambio a 60 edias
-    'BAR_SIZE': '30 mins', ###cambio a velas de 1 hora
-    'MAX_CONCURRENT_REQUESTS': 5, ###### se puede amplificar a mas? ## verifica diego
+    'INTERVAL': 60, 
+    'DURATION': '30 D', 
+    'BAR_SIZE': '30 mins',
+    'MAX_CONCURRENT_REQUESTS': 5, ###### se puede amplificar a mas?
     'MARKET_OPEN': time(9, 30, tzinfo=timezone('US/Eastern')),
     'MARKET_CLOSE': time(16, 0, tzinfo=timezone('US/Eastern')),
     'SLIPPAGE': 0.05,
     'TAKE_PROFIT_RATIO': 0.04,
     'STOP_LOSS_RATIO': 0.02,
-    'MAX_POSITION_SIZE': 1000, #### chequear 
-    'USE_REALTIME_DATA': True  # flag para activar/desactivar datos en tiempo real
+    'MAX_POSITION_SIZE': 1000, #### chequear cuando nos den el go
+    'USE_REALTIME_DATA': True 
 }
 
 class TradingState:
@@ -35,7 +35,7 @@ class TradingState:
             'TakeProfit', 'StopLoss', 'RiskReward', 'Status', 'Date'
         ])
         self.historical_data = {}
-        self.real_time_prices = {}  # data en tiempo real
+        self.real_time_prices = {}  
         self.symbols = []
         
 trading_state = TradingState()
@@ -99,7 +99,7 @@ async def fetch_historical_data(symbol):
         return symbol, None 
         
     except Exception as e:
-        print(f"Error getting data for {symbol}: {e}") #### maperar a que tipo de ticker no se tiene info y ver posible tratamiento de data
+        print(f"Error getting data for {symbol}: {e}") 
         return symbol, None
     
     
@@ -136,10 +136,8 @@ async def update_real_time_prices(symbol):
     except Exception as e:
         print(f"Error updating real-time prices for {symbol}: {e}")
 
-def calculate_indicators(df):  ########################################################## ACTUALIZAR CON LA AÚLTIMA VERSION DE LA ESTRATEGIA
-    #if len(df) < 100:
-        #raise ValueError("Insufficient data for indicators") #Manejo de errores
-    
+def calculate_indicators(df): 
+  
     # Cálculo de indicadores técnicos
     df['RSI'] = ta.momentum.rsi(close=df['close'], window=20)
     df['SMA100'] = df['close'].rolling(window=100, min_periods=100).mean()
@@ -162,16 +160,7 @@ def calculate_indicators(df):  #################################################
             (df['close'].shift(4) <= df['SMA100'].shift(4))).astype(int)
 
     df['buy_signal'] = np.where(((df['RSI_oversold_last5'] == 1) & (df['break_SMA'] == 1) ), 
-                True, False)
-    # df['break'] = np.where((df['break_SMA'] == 1 ), 
-    #                     True, False)
-    # df['buy_signal'] = np.where(((df['RSI_oversold'] == 1) & (df['break_SMA'] == 1) & (df['volume_high'] == True)), 
-    #                             True, 
-    #                             np.where(((df['MFI_overbought'] == 1) & (df['break_SMA'] == 1) & (df['volume_high'] == True)),
-    #                                      True, 
-    #                                      False))
-    df['sell_signal'] = False
-    
+                True, False)    
     return df
 
 async def place_order(symbol, action):
@@ -188,11 +177,12 @@ async def place_order(symbol, action):
             return False
         
         # Cálculo de tamaño de posición ###### SIZING FIJO X TRADE IMPLEMENTAR
-        account = await ib.accountSummaryAsync()
-        equity = next((a.value for a in account if a.tag == 'NetLiquidation'), 0) #En prueva (Size dinamico segun el dinero de la cuenta)
-        risk_amount = float(equity) * CONFIG['RISK_PER_TRADE']
-        price_diff = CONFIG['STOP_LOSS_RATIO'] * current_price
-        position_size = min(int(risk_amount / price_diff), CONFIG['MAX_POSITION_SIZE']) ##### DEFINIR DE MANERA SIMPLE COMO LA IPLEMENTACIÓN EN DEMO
+        # account = await ib.accountSummaryAsync()
+        # equity = next((a.value for a in account if a.tag == 'NetLiquidation'), 0) #En prueva (Size dinamico segun el dinero de la cuenta)
+        # risk_amount = float(equity) * CONFIG['RISK_PER_TRADE']
+        #price_diff = CONFIG['STOP_LOSS_RATIO'] * current_price
+        #position_size = min(int(risk_amount / price_diff), CONFIG['MAX_POSITION_SIZE'] // current_price) ##### DEFINIR DE MANERA SIMPLE COMO LA IPLEMENTACIÓN EN DEMO
+        position_size = CONFIG['MAX_POSITION_SIZE'] // current_price #division entera - sizing fijo. OJO: MAX_POSITION_SIZE = 1000
         
         if position_size < 1:
             print(f"Position too small for {symbol}. Skipping.")
