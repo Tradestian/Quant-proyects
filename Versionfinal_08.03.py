@@ -1,3 +1,16 @@
+#run auto screening
+'''
+#Run screening
+with open("screening_server.py") as f:
+    exec(f.read())
+print("Screening completo")
+del df_data
+del df_prueba1
+del df_prueba2
+del temp_df
+'''
+
+
 import asyncio
 import pandas as pd
 import numpy as np
